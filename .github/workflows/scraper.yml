@@ -28,4 +28,3 @@ jobs:
         with:
           name: nowe-produkty
           path: nowe_produkty_*.txt
-Fix: update artifact action to v4
