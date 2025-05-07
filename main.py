@@ -4,7 +4,6 @@ import datetime
 import os
 import json
 
-# Lista kategorii i odpowiadających im URLi
 URLS = {
     'Jeansy damskie': 'https://crossjeans.pl/ona/jeansy-damskie?limit=0',
     'Spodnie damskie': 'https://crossjeans.pl/ona/spodnie-damskie?limit=0',
@@ -27,52 +26,47 @@ URLS = {
     'Odzież męska str. 5': 'https://crossjeans.pl/on/odziez-meska?limit=100&page=5',
 }
 
-# Pobiera nazwy produktów z danej strony
-def get_products(url):
+def get_product_links(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
-    products = soup.select('.product-name a')
-    return [p['href'].strip() for p in products if p.has_attr('href')]
+    links = soup.select('.product-name a')
+    return ["https://crossjeans.pl" + link['href'] for link in links if link.has_attr('href')]
 
-# Wczytuje dane z poprzedniego dnia (jeśli istnieją)
-def load_previous_products():
-    if not os.path.exists("products.json"):
-        return {}
-    with open("products.json", "r", encoding="utf-8") as f:
-        return json.load(f)
+def load_previous_links():
+    if os.path.exists('products.json'):
+        with open('products.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return {}
 
-# Zapisuje aktualną listę produktów
-def save_current_products(data):
-    with open("products.json", "w", encoding="utf-8") as f:
+def save_current_links(data):
+    with open('products.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-# Główna logika programu
 def main():
-    previous = load_previous_products()
+    today = datetime.date.today().isoformat()
+    previous = load_previous_links()
     current = {}
-    new_products = {}
+    new = {}
 
     for category, url in URLS.items():
-        products = get_products(url)
-        current[category] = products
-        old = previous.get(category, [])
-        new_items = [p for p in products if p not in old]
-        if new_items:
-            new_products[category] = new_items
+        links = get_product_links(url)
+        current[category] = links
+        old_links = previous.get(category, [])
+        new_links = [link for link in links if link not in old_links]
+        if new_links:
+            new[category] = new_links
 
-    save_current_products(current)
+    save_current_links(current)
 
-    today = datetime.date.today().isoformat()
     with open(f"nowe_produkty_{today}.txt", "w", encoding="utf-8") as f:
-        if not new_products:
+        if not new:
             f.write("Brak nowych produktów.")
         else:
-            for category, items in new_products.items():
+            for category, links in new.items():
                 f.write(f"{category}:\n")
-                for item in items:
-                    f.write(f"  - {item}\n")
+                for link in links:
+                    f.write(f"  - {link}\n")
                 f.write("\n")
 
-# Uruchomienie skryptu
 if __name__ == "__main__":
     main()
