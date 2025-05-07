@@ -32,7 +32,7 @@ def get_products(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
     products = soup.select('.product-name a')
-    return [p.text.strip() for p in products]
+    return [p['href'].strip() for p in products if p.has_attr('href')]
 
 # Wczytuje dane z poprzedniego dnia (jeśli istnieją)
 def load_previous_products():
